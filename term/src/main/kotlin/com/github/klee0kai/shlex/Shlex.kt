@@ -5,8 +5,14 @@ object Shlex {
     /**
      * Split the string *s* using shell-like syntax.
      */
-    fun split(cmd: String, comments: Boolean = false, posix: Boolean = true): Sequence<String> =
-        ShLexer(input = cmd.byteInputStream(), posix = posix)
+    fun split(cmd: String, conf: ShlexConfig = ShlexConfig()): Sequence<String> =
+        ShLexer(input = cmd.byteInputStream(), conf = ShlexConfig())
+
+    /**
+     * Split the string *s* using shell-like syntax.
+     */
+    fun split(cmd: String, conf: ShlexConfig.() -> Unit): Sequence<String> =
+        ShLexer(input = cmd.byteInputStream(), conf = ShlexConfig().apply(conf))
 
 
     /**

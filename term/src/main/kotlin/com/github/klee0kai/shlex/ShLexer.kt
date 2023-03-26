@@ -5,38 +5,35 @@ import java.io.InputStream
 import java.util.*
 
 open class ShLexer(
-    protected val reader: BufferedReader,
-    protected open val posix: Boolean = true,
-    punctuationChars: Boolean = false,
+    val reader: BufferedReader,
+    conf: ShlexConfig = ShlexConfig()
 ) : Sequence<String>, Iterator<String> {
 
     constructor(
-        input: InputStream, posix: Boolean = true, punctuationChars: Boolean = false,
-    ) : this(BufferedReader(input.reader()), posix, punctuationChars)
+        input: InputStream, conf: ShlexConfig = ShlexConfig()
+    ) : this(BufferedReader(input.reader()), conf)
 
     constructor(
-        input: String, posix: Boolean = true, punctuationChars: Boolean = false,
-    ) : this(BufferedReader(input.reader()), posix, punctuationChars)
+        input: String, conf: ShlexConfig = ShlexConfig()
+    ) : this(BufferedReader(input.reader()), conf)
 
-    protected open val tag = "shlex"
 
-    protected open val debug = 0
+    protected open val conf = conf.copy()
 
     protected open val commenters = "#"
     protected open val whitespace = " \t\r\n"
-    protected open val whitespaceSplit = false
     protected open val quotes = "'\""
     protected open val escape = "\\"
     protected open val escapedquotes = "\""
     protected open val wordchars = buildString {
         append("abcdfeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
-        if (posix) append("ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ")
-        if (punctuationChars) {
+        if (conf.posix) append("ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ")
+        if (conf.punctuationChars) {
             // these chars added because allowed in file names, args, wildcards
             append("~-./*?=")
         }
     }
-    protected open val punctuationChars = if (punctuationChars) "();<>|&" else ""
+    protected open val punctuationChars = if (conf.punctuationChars) "();<>|&" else ""
 
     protected open val pushback: Deque<String> = LinkedList()
     protected open val pushbackChars: Deque<Char> = LinkedList()
@@ -46,9 +43,14 @@ open class ShLexer(
     protected open var lineno = 0
 
 
+    private val posix get() = conf.posix
+    private val whitespaceSplit get() = conf.whitespaceSplit
+    private val tag get() = conf.tag
+    private val debug: Int = conf.debug
+
     override fun iterator(): Iterator<String> = this
 
-    override fun hasNext(): Boolean = pushback.isNotEmpty()
+    override fun hasNext(): Boolean = nextToken()?.also { pushback.addFirst(it) } != null
 
     override fun next(): String = nextToken()!!
 
@@ -73,11 +75,12 @@ open class ShLexer(
     protected open fun readToken(): String? {
         var quoted = false
         var escapedstate = ' '
-        var nextchar: Char
+        var nextchar: Char?
 
         while (true) {
 
-            nextchar = if (pushbackChars.isNullOrEmpty()) pushbackChars.pollFirst() else reader.read().toChar()
+            nextchar = if (pushbackChars.isNotEmpty()) pushbackChars.pollFirst()
+            else reader.read().let { if (it < 0) null else it.toChar() }
 
             if (nextchar == '\n') lineno += 1
             if (debug >= 3) print("${tag}: in state $state I see character: $nextchar")
