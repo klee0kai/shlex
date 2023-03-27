@@ -55,7 +55,6 @@ open class ShLexer(
 
     override fun next(): String = nextToken()!!
 
-
     /**
      * Push an input source onto the lexer's input source stack.
      */
@@ -115,7 +114,7 @@ open class ShLexer(
         }
 
         // Neither inclusion nor EOF
-        if (debug >= 1) print(raw?.let { "${tag}: token=${raw}" } ?: "shlex: token=EOF")
+        if (debug >= 1) print(raw?.let { "${tag}: token=${raw}" } ?: "$tag: token=EOF")
         return raw
     }
 
@@ -126,7 +125,7 @@ open class ShLexer(
 
         while (true) {
 
-            nextchar = if (pushbackChars.isNotEmpty()) pushbackChars.pollFirst()
+            nextchar = if (pushbackChars.isNotEmpty()) pushbackChars.pollLast()
             else source.input.read().let { if (it < 0) null else it.toChar() }
 
             if (nextchar == '\n') source.lineno += 1
@@ -141,12 +140,13 @@ open class ShLexer(
                 state == ' ' -> {
                     when {
                         nextchar == null -> {
-
+                            state = null
+                            break
                         }
 
                         nextchar in whitespace -> {
-                            if (debug >= 2) println("shlex: I see whitespace in whitespace state")
-                            if ((token.isNotEmpty()) || (posix && quoted)) break   // emit current token
+                            if (debug >= 2) println("$tag: I see whitespace in whitespace state")
+                            if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
                             else continue
                         }
 
@@ -193,7 +193,7 @@ open class ShLexer(
                     when {
                         nextchar == null -> {
                             // end of file
-                            if (debug >= 2) print("shlex: I see EOF in quotes state")
+                            if (debug >= 2) print("$tag: I see EOF in quotes state")
                             //  XXX what error should be raised here?
                             error("No closing quotation")
                         }
@@ -222,7 +222,7 @@ open class ShLexer(
                 state!! in escape -> {
                     if (nextchar == null) {
                         // end of file
-                        if (debug >= 2) print("shlex: I see EOF in quotes state")
+                        if (debug >= 2) print("$tag: I see EOF in quotes state")
                         //  XXX what error should be raised here?
                         error("No closing quotation")
                     }
@@ -243,7 +243,7 @@ open class ShLexer(
                         }
 
                         nextchar in whitespace -> {
-                            if (debug >= 2) println("shlex: I see whitespace in word state")
+                            if (debug >= 2) println("$tag: I see whitespace in word state")
                             state = ' '
                             if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
                             else continue
@@ -284,7 +284,7 @@ open class ShLexer(
                         else -> {
                             if (punctuationChars.isNotEmpty()) pushbackChars.addLast(nextchar)
                             else pushback.addFirst(nextchar.toString())
-                            if (debug >= 2) println("shlex: I see punctuation in word state")
+                            if (debug >= 2) println("$tag: I see punctuation in word state")
                             state = ' '
 
                             if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
@@ -299,7 +299,7 @@ open class ShLexer(
         token = ""
         if (posix && !quoted && result.isNullOrEmpty()) result = null
 
-        if (debug > 1) println(result?.let { "${tag}: raw token=${result}" } ?: "shlex: raw token=EOF")
+        if (debug > 1) println(result?.let { "${tag}: raw token=${result}" } ?: "$tag: raw token=EOF")
         return result
     }
 
