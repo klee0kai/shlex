@@ -1,6 +1,11 @@
 package com.github.klee0kai.shlex
 
+import java.io.File
+
 data class ShlexConfig(
+    var infile: File? = null,
+    var source: String? = null,
+
     var posix: Boolean = true,
     var whitespaceSplit: Boolean = true,
     var punctuationChars: Boolean = false,
@@ -8,5 +13,5 @@ data class ShlexConfig(
 
     var tag: String = "shlex",
     var debug: Int = 0,
-    )
+)
 
