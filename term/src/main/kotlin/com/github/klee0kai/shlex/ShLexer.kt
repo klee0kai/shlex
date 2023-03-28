@@ -21,12 +21,12 @@ open class ShLexer(
 
     protected open val conf = conf.copy()
 
-    protected open val commenters = "#"
-    protected open val whitespace = " \t\r\n"
-    protected open val quotes = "'\""
-    protected open val escape = "\\"
-    protected open val escapedquotes = "\""
-    protected open val wordchars = buildString {
+    open val commenters = "#"
+    open val whitespace = " \t\r\n"
+    open val quotes = "'\""
+    open val escape = "\\"
+    open val escapedquotes = "\""
+    open val wordchars = buildString {
         append("abcdfeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
         if (conf.posix) append("ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ")
         if (conf.punctuationChars) {
@@ -34,15 +34,15 @@ open class ShLexer(
             append("~-./*?=")
         }
     }
-    protected open val punctuationChars = if (conf.punctuationChars) "();<>|&" else ""
+    open val punctuationChars = if (conf.punctuationChars) "();<>|&" else ""
 
-    protected open val pushback: Deque<String> = LinkedList()
-    protected open val pushbackChars: Deque<Char> = LinkedList()
-    protected open val fileStack: Deque<ShSource> = LinkedList()
+    open val pushback: Deque<String> = LinkedList()
+    open val pushbackChars: Deque<Char> = LinkedList()
+    open val fileStack: Deque<ShSource> = LinkedList()
 
-    protected open var state: Char? = ' '
-    protected open var token = ""
-    protected open var source = ShSource(input = reader, file = null, lineno = 1)
+    open var state: Char? = ' '
+    open var token = ""
+    open var source = ShSource(input = reader, file = null, lineno = 1)
 
     private val posix get() = conf.posix
     private val whitespaceSplit get() = conf.whitespaceSplit
