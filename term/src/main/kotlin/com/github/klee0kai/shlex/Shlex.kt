@@ -26,7 +26,7 @@ object Shlex {
      * Return a shell-escaped version of the string *s*.
      */
     fun quote(s: String?): String {
-        if (s.isNullOrBlank()) return "''";
+        if (s.isNullOrEmpty()) return "''";
 
 
         val isUnsafe = Regex("[^\\w@%+=:,./-]").find(s) != null

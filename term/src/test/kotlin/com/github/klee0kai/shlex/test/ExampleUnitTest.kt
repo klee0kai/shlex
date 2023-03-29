@@ -142,11 +142,13 @@ foo#bar\nbaz|foo|baz|
         .split("\n")
         .map { it.split("|") }
         .filter { !(it.isEmpty() || it.size == 1 && it[0].isEmpty()) }
+        .map { list -> list.map { it.replace("\\n", "\n") } }
 
     private val posixData = posixDataStr
         .split("\n")
         .map { it.split("|") }
         .filter { !(it.isEmpty() || it.size == 1 && it[0].isEmpty()) }
+        .map { list -> list.map { it.replace("\\n", "\n") } }
 
     /**
      * Test data splitting with posix parser
@@ -176,7 +178,7 @@ foo#bar\nbaz|foo|baz|
         //  of course, the same applies to | and ||
         //  these should all parse to the same output
         listOf("&&", "&", "|&", ";&", ";;&", "||", "|", "&|", ";|", ";;|").forEach { delimiter ->
-            val src = arrayOf("echo hi ${delimiter} echo bye", "echo hi${delimiter}echo bye' % delimiter")
+            val src = arrayOf("echo hi ${delimiter} echo bye", "echo hi${delimiter}echo bye")
             val ref = listOf("echo", "hi", delimiter, "echo", "bye")
             src.forEach { ss ->
                 listOf(true, false).forEach { whitespaceSplitFlag ->
@@ -332,12 +334,12 @@ foo#bar\nbaz|foo|baz|
     fun testEmptyStringHandling() {
         var expected = listOf("", ")", "abc")
         listOf(false, true).forEach { punct ->
-            val s = ShLexer("'')abc", ShlexConfig(punctuationChars = punct, posix = true))
+            val s = ShLexer("'')abc", ShlexConfig(punctuationChars = punct, posix = true, whitespaceSplit = false))
             assertEquals(s.toList(), expected)
         }
         expected = listOf("''", ")", "abc")
         listOf(false, true).forEach { punct ->
-            val s = ShLexer("'')abc", ShlexConfig(punctuationChars = punct, posix = false))
+            val s = ShLexer("'')abc", ShlexConfig(punctuationChars = punct, whitespaceSplit = false, posix = false))
             assertEquals(s.toList(), expected)
         }
     }
@@ -396,14 +398,14 @@ foo#bar\nbaz|foo|baz|
 
     private fun splitTest(data: List<List<String>>, commentFlag: Boolean) {
         data.forEach {
-            val splitted = Shlex.split(it[0], ShlexConfig(comments = commentFlag))
-            assertEquals(it.subList(1, it.size - 1), splitted.toList())
+            val splitted = Shlex.split(it[0], ShlexConfig(comments = commentFlag)).toList()
+            assertEquals(it.subList(1, it.size - 1), splitted)
         }
     }
 
     private fun oldSplit(s: String): List<String> {
         val ret = mutableListOf<String>()
-        var lex = ShLexer(s)
+        var lex = ShLexer(s, ShlexConfig(debug = 3, whitespaceSplit = false))
         var tok = lex.nextToken()
         while (tok != null) {
             ret.add(tok)
