@@ -21,7 +21,7 @@ open class ShLexer(
 
     protected open val conf = conf.copy()
 
-    open val commenters = "#"
+    open val commenters = if (conf.comments) "#" else ""
     open val whitespace = " \t\r\n"
     open val quotes = "'\""
     open val escape = "\\"
@@ -38,6 +38,9 @@ open class ShLexer(
             // these chars added because allowed in file names, args, wildcards
             append("~-./*?=")
         }
+    }.filter {
+        // remove any punctuation chars from wordchars
+        it !in punctuationChars
     }
 
     open val pushback: Deque<String> = LinkedList()

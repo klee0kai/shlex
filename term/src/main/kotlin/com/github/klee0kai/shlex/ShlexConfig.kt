@@ -7,7 +7,7 @@ data class ShlexConfig(
     var source: String? = null,
 
     var posix: Boolean = true,
-    var comments: Boolean = false,
+    var comments: Boolean = true,
     var whitespaceSplit: Boolean = true,
     var punctuationChars: Boolean = false,
     var customPunctuationChars: String? = null,

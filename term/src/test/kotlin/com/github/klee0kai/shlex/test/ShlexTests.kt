@@ -4,9 +4,10 @@ import com.github.klee0kai.shlex.ShLexer
 import com.github.klee0kai.shlex.Shlex
 import com.github.klee0kai.shlex.ShlexConfig
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-class ExampleUnitTest {
+class ShlexTests {
 
 
     // The original test data set was from shellwords, by Hartmut Goebel.
@@ -301,10 +302,9 @@ foo#bar\nbaz|foo|baz|
      */
     @Test
     fun testPunctuationInWordChars() {
-        //TODO
-        //val s = ShLexer("a_b__c", ShlexConfig(punctuationChars = '_'))
-//        assertFalse('_' in s.wordchars)
-//        assertEquals(s.toList(), listOf("a", "_", "b", "__", "c"))
+        val s = ShLexer("a_b__c", ShlexConfig(customPunctuationChars = "_"))
+        assertTrue('_' !in s.wordchars)
+        assertEquals(s.toList(), listOf("a", "_", "b", "__", "c"))
     }
 
     /**
@@ -368,7 +368,22 @@ foo#bar\nbaz|foo|baz|
 
     @Test
     fun testQuote() {
-        //todo
+        'd'.isDigit()
+        val asciiLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        val digits = "0123456789"
+        val safeunquoted = asciiLetters + digits + "@%_-+=:,./"
+        val unicode_sample = "\u00e9\u00e0\u00df"
+        val unsafe = "\"`$\\!$unicode_sample"
+
+        assertEquals(Shlex.quote(""), "''")
+        assertEquals(Shlex.quote(safeunquoted), safeunquoted)
+        assertEquals(Shlex.quote("test file name"), "'test file name'")
+        unsafe.forEach { u ->
+            assertEquals("'test${u}name'", Shlex.quote("test${u}name"))
+        }
+        unsafe.forEach { u ->
+            assertEquals("'test${u}'\"'\"'name'\"'\"''", Shlex.quote("test${u}'name'"))
+        }
     }
 
     @Test
@@ -394,12 +409,6 @@ foo#bar\nbaz|foo|baz|
             val resplit = Shlex.split(joined)
             assertEquals(splitted, resplit.toList())
         }
-    }
-
-    @Test
-    fun testPunctuationCharsReadOnly() {
-        //todo
-        val punctuation_chars = "/|$%^"
     }
 
     private fun splitTest(data: List<List<String>>, commentFlag: Boolean) {
