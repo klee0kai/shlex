@@ -6,7 +6,7 @@ object Shlex {
      * Split the string *s* using shell-like syntax.
      */
     fun split(cmd: String, conf: ShlexConfig = ShlexConfig()): Sequence<String> =
-        ShLexer(input = cmd.byteInputStream(), conf = ShlexConfig())
+        ShLexer(input = cmd.byteInputStream(), conf = conf)
 
     /**
      * Split the string *s* using shell-like syntax.

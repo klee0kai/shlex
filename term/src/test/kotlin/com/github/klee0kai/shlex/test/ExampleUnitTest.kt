@@ -270,12 +270,18 @@ foo#bar\nbaz|foo|baz|
     fun testSyntaxSplitCustom() {
         val ss = "~/a&&b-c --color=auto||d *.py?"
         var ref = listOf("~/a", "&", "&", "b-c", "--color=auto", "||", "d", "*.py?")
-        var s = Shlex.split(ss, ShlexConfig(punctuationChars = true, whitespaceSplit = false))
-        assertEquals(ref, s.toList())
+        var s = Shlex.split(
+            cmd = ss,
+            conf = ShlexConfig(whitespaceSplit = false, customPunctuationChars = "|")
+        ).toList()
+        assertEquals(ref, s)
 
         ref = listOf("~/a&&b-c", "--color=auto", "||", "d", "*.py?")
-        s = Shlex.split(ss, ShlexConfig(punctuationChars = true, whitespaceSplit = true))
-        assertEquals(ref, s.toList())
+        s = Shlex.split(
+            cmd = ss,
+            conf = ShlexConfig(whitespaceSplit = true, customPunctuationChars = "|")
+        ).toList()
+        assertEquals(ref, s)
     }
 
     /**
@@ -286,7 +292,7 @@ foo#bar\nbaz|foo|baz|
         val source = "a && b || c"
         val expected = listOf("a" to "a", "&&" to "c", "b" to "a", "||" to "c", "c" to "a")
         val s = ShLexer(source, ShlexConfig(punctuationChars = true))
-        val observed = s.map { it to (if (it in s.punctuationChars) "c" else "a") }
+        val observed = s.map { it to (if (it[0] in s.punctuationChars) "c" else "a") }
         assertEquals(expected, observed.toList())
     }
 
@@ -405,9 +411,9 @@ foo#bar\nbaz|foo|baz|
 
     private fun oldSplit(s: String): List<String> {
         val ret = mutableListOf<String>()
-        var lex = ShLexer(s, ShlexConfig(debug = 3, whitespaceSplit = false))
+        var lex = ShLexer(s, ShlexConfig(posix = false, whitespaceSplit = false))
         var tok = lex.nextToken()
-        while (tok != null) {
+        while (!tok.isNullOrEmpty()) {
             ret.add(tok)
             tok = lex.nextToken()
         }

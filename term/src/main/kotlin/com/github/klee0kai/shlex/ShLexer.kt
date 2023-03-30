@@ -26,15 +26,19 @@ open class ShLexer(
     open val quotes = "'\""
     open val escape = "\\"
     open val escapedquotes = "\""
+    open val punctuationChars: String = when {
+        conf.customPunctuationChars != null -> conf.customPunctuationChars!!
+        conf.punctuationChars -> "();<>|&"
+        else -> ""
+    }
     open val wordchars = buildString {
         append("abcdfeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
         if (conf.posix) append("ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ")
-        if (conf.punctuationChars) {
+        if (punctuationChars.isNotEmpty()) {
             // these chars added because allowed in file names, args, wildcards
             append("~-./*?=")
         }
     }
-    open val punctuationChars = if (conf.punctuationChars) "();<>|&" else ""
 
     open val pushback: Deque<String> = LinkedList()
     open val pushbackChars: Deque<Char> = LinkedList()
@@ -252,9 +256,11 @@ open class ShLexer(
                         nextchar in commenters -> {
                             source.input.readLine()
                             source.lineno += 1
-                            if (posix) state = ' '
-                            if (token?.isNotEmpty() == true || (posix && quoted)) break   // emit current token
-                            else continue
+                            if (posix) {
+                                state = ' '
+                                if (token?.isNotEmpty() == true || (posix && quoted)) break   // emit current token
+                                else continue
+                            }
                         }
 
                         state == 'c' -> {
