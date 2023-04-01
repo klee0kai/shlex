@@ -1,6 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
-
 plugins {
     id("java")
     kotlin("jvm")
