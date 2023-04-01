@@ -21,28 +21,35 @@ open class ShLexer(
 
     protected open val conf = conf.copy()
 
-    protected open val commenters = "#"
-    protected open val whitespace = " \t\r\n"
-    protected open val quotes = "'\""
-    protected open val escape = "\\"
-    protected open val escapedquotes = "\""
-    protected open val wordchars = buildString {
+    open val commenters = if (conf.comments) "#" else ""
+    open val whitespace = " \t\r\n"
+    open val quotes = "'\""
+    open val escape = "\\"
+    open val escapedquotes = "\""
+    open val punctuationChars: String = when {
+        conf.customPunctuationChars != null -> conf.customPunctuationChars!!
+        conf.punctuationChars -> "();<>|&"
+        else -> ""
+    }
+    open val wordchars = buildString {
         append("abcdfeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
         if (conf.posix) append("ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ")
-        if (conf.punctuationChars) {
+        if (punctuationChars.isNotEmpty()) {
             // these chars added because allowed in file names, args, wildcards
             append("~-./*?=")
         }
+    }.filter {
+        // remove any punctuation chars from wordchars
+        it !in punctuationChars
     }
-    protected open val punctuationChars = if (conf.punctuationChars) "();<>|&" else ""
 
-    protected open val pushback: Deque<String> = LinkedList()
-    protected open val pushbackChars: Deque<Char> = LinkedList()
-    protected open val fileStack: Deque<ShSource> = LinkedList()
+    open val pushback: Deque<String> = LinkedList()
+    open val pushbackChars: Deque<Char> = LinkedList()
+    open val fileStack: Deque<ShSource> = LinkedList()
 
-    protected open var state: Char? = ' '
-    protected open var token = ""
-    protected open var source = ShSource(input = reader, file = null, lineno = 1)
+    open var state: Char? = ' '
+    open var token: String? = ""
+    open var source = ShSource(input = reader, file = null, lineno = 1)
 
     private val posix get() = conf.posix
     private val whitespaceSplit get() = conf.whitespaceSplit
@@ -114,7 +121,7 @@ open class ShLexer(
         }
 
         // Neither inclusion nor EOF
-        if (debug >= 1) print(raw?.let { "${tag}: token=${raw}" } ?: "$tag: token=EOF")
+        if (debug >= 1) println(raw?.let { "${tag}: token=${raw}" } ?: "$tag: token=EOF")
         return raw
     }
 
@@ -129,11 +136,11 @@ open class ShLexer(
             else source.input.read().let { if (it < 0) null else it.toChar() }
 
             if (nextchar == '\n') source.lineno += 1
-            if (debug >= 3) print("${tag}: in state $state I see character: $nextchar")
+            if (debug >= 3) println("${tag}: in state '$state' I see character: '$nextchar'")
 
             when {
                 state == null -> {
-                    token = "" // past end of file
+                    token = null // past end of file
                     break
                 }
 
@@ -146,7 +153,7 @@ open class ShLexer(
 
                         nextchar in whitespace -> {
                             if (debug >= 2) println("$tag: I see whitespace in whitespace state")
-                            if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
+                            if (token?.isNotBlank() == true || (posix && quoted)) break   // emit current token
                             else continue
                         }
 
@@ -182,7 +189,7 @@ open class ShLexer(
 
                         else -> {
                             token = nextchar.toString()
-                            if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
+                            if (token?.isNotEmpty() == true || (posix && quoted)) break   // emit current token
                             else continue
                         }
                     }
@@ -193,7 +200,7 @@ open class ShLexer(
                     when {
                         nextchar == null -> {
                             // end of file
-                            if (debug >= 2) print("$tag: I see EOF in quotes state")
+                            if (debug >= 2) println("$tag: I see EOF in quotes state")
                             //  XXX what error should be raised here?
                             error("No closing quotation")
                         }
@@ -222,7 +229,7 @@ open class ShLexer(
                 state!! in escape -> {
                     if (nextchar == null) {
                         // end of file
-                        if (debug >= 2) print("$tag: I see EOF in quotes state")
+                        if (debug >= 2) println("$tag: I see EOF in quotes state")
                         //  XXX what error should be raised here?
                         error("No closing quotation")
                     }
@@ -245,16 +252,18 @@ open class ShLexer(
                         nextchar in whitespace -> {
                             if (debug >= 2) println("$tag: I see whitespace in word state")
                             state = ' '
-                            if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
+                            if (token?.isNotEmpty() == true || (posix && quoted)) break   // emit current token
                             else continue
                         }
 
                         nextchar in commenters -> {
                             source.input.readLine()
                             source.lineno += 1
-                            if (posix) state = ' '
-                            if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
-                            else continue
+                            if (posix) {
+                                state = ' '
+                                if (token?.isNotEmpty() == true || (posix && quoted)) break   // emit current token
+                                else continue
+                            }
                         }
 
                         state == 'c' -> {
@@ -287,7 +296,7 @@ open class ShLexer(
                             if (debug >= 2) println("$tag: I see punctuation in word state")
                             state = ' '
 
-                            if (token.isNotEmpty() || (posix && quoted)) break   // emit current token
+                            if (token?.isNotEmpty() == true || (posix && quoted)) break   // emit current token
                             else continue
                         }
                     }
