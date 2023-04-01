@@ -13,7 +13,3 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-
-rootProject.name = "Shlex"
-includeBuild("gradle_plugins/publish")
-include("shlex")
